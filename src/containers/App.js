@@ -1,35 +1,43 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import SearchBox from '../components/SearchBox';
 import CardList from '../components/CardList';
 import Scroll from '../components/Scroll';
 import ErrorBoundary from '../components/ErrorBoundary';
 import './App.css';
 
-class App extends Component {
-	constructor() {
-		super();
-		this.state = {
-			users: [],
-			searchfield: ''
-		}
-	}
+import { setSearchField, requestUsers } from '../actions'
 
-	onSearchChange = (event) => {
-		this.setState({ searchfield: event.target.value })
+const mapStateToProps = state => {
+	return {
+		searchField: state.searchUsers.searchField,
+		users: state.requestUsers.users,
+		isPending: state.requestUsers.isPending,
+		error: state.requestUsers.error
 	}
+}
+
+const mapDispatchToProps = dispatch => {
+	return {
+		onSearchChange: (event) => dispatch(setSearchField(event.target.value)),
+		onRequestUsers: () => dispatch(requestUsers())
+	}
+}
+
+class App extends Component {
 
 	render() {
-		const {users, searchfield} = this.state;
-		const filteredUsers = users.filter(user => {
-			return user.name.toLowerCase().includes(searchfield.toLowerCase())
+		const { searchField, onSearchChange, users, isPending } = this.props;
+		const filteredUsers = users.filter( user => {
+			return user.name.toLowerCase().includes(searchField.toLowerCase());
 		})
-		return (!users.length) ?
+		return isPending ?
 		<><h1 className='tc'>Loading</h1></> :
 		(
 			<>
 				<header className='tc'>
 					<><header><h1 className="f2">RoboFriends</h1></header></>
-					<SearchBox searchChange={this.onSearchChange} />
+					<SearchBox searchChange={onSearchChange} />
 				</header>
 				<main className='tc'>
 					<Scroll>
@@ -43,10 +51,8 @@ class App extends Component {
 	}
 
 	componentDidMount() {
-		fetch('https://jsonplaceholder.typicode.com/users')
-			.then(response => response.json())
-			.then(users => {this.setState({ users: users })})
+		this.props.onRequestUsers();
 	}
 }
 
-export default App;
+export default connect(mapStateToProps, mapDispatchToProps)(App);
